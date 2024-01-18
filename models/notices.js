@@ -3,6 +3,11 @@ const moongoose = require('mongoose');
 const Schema = moongoose.Schema;
 
 const NoticesSchema = new Schema({   
+    service:{
+        required:true,
+        type : Schema.Types.ObjectId,
+        ref : "services" 
+    },
     title : {
         type : String,
         required : true,
