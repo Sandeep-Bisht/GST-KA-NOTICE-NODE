@@ -26,7 +26,7 @@ const NoticesSchema = new Schema({
     status:{
         type : String,
         required : true,
-        default:'Active',
+        default:'active',
     },
     created_by:{
         required:true,
