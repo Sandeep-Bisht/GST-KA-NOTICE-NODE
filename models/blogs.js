@@ -17,7 +17,7 @@ const BlogSchema = new Schema({
     category: {
         required : true,
         type : Schema.Types.ObjectId,
-        ref:"categories"
+        ref:"blogs_categories"
     },
     featuredImage: {
         required : true,
