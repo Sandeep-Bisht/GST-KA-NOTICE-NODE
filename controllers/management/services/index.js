@@ -25,8 +25,8 @@ exports.getAllServices = async (req, res) => {
 
 exports.createService = async (req, res) => {
     try {
-
-        let data = { ...req.body,featuredImage: req.files.featuredImage[0], featuredIcon: req.files.featuredIcon[0]};
+      
+        let data = { ...req.body, created_by:req.user._id, featuredImage: req.files.featuredImage[0], featuredIcon: req.files.featuredIcon[0]};
     
         Services.create(data).then((result)=>{
           if (result) {
