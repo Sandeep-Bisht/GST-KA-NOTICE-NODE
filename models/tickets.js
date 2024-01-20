@@ -18,8 +18,7 @@ const ticketSchema = new Schema({
         type : Schema.Types.ObjectId,
         ref : "notices" 
     },
-    price:{
-        required:true,
+    asked_price:{
         type : String
     },
     document:{

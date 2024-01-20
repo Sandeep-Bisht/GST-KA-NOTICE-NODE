@@ -45,7 +45,6 @@ exports.signup = async (req, res) => {
         
                    transporter.sendMail(mailOptions,(err,info)=>{
                     if (err) {
-                        console.log("this is error ", err)
                         return res.status(500).json({
                             err,
                             error:true,
