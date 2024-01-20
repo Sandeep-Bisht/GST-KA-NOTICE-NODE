@@ -4,10 +4,7 @@ const Category = require('../../../models/blogsCategories')
 module.exports = {
     create : async(req,res) => {
         try {
-            console.log(req.user._id,"inside try", req.body, "fileeeeeeeeee", req.files)
-            let data = { ...req.body,created_by:req.user._id, featuredImage: req.files};
-            console.log("before", data)
-    
+            let data = { ...req.body,created_by:req.user._id, featuredImage: req.files};    
             if((data.tags || !Array.isArray(data.tags ) && data.tags !== '')){
               data.tags = data.tags.split(',');
             }
@@ -45,7 +42,6 @@ module.exports = {
           }
     },
     get_all_blog : async(req,res) => {
-        console.log("inside all blogs");
         try {
             Blog.find().populate("category").then((result)=> {
                 if(result){
@@ -75,7 +71,6 @@ module.exports = {
     },
     get_blog_by_id : async(req,res) => {
         const {_id} = req.body;
-        console.log("inside get blog by id", _id)
         try{
            await Blog.findById(_id).populate("category").then((result)=>{
               if(result!==null)
@@ -223,7 +218,6 @@ module.exports = {
 
 
     create_categorie : async(req, res) => {
-        console.log("inside create cate", req.body, "fileeeeeeeee", req.files)
         try {
             let data = { ...req.body,created_by:req.user._id, featuredIcon: req.files[0]};
             
@@ -257,7 +251,6 @@ module.exports = {
     },
 
     get_all_blog_categories : async(req, res) => {
-        console.log("inside geyt all blog categories");
         try{
             await Category.find().then((result)=>{
                 if(result.length>0)
