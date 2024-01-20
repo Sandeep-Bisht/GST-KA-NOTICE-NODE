@@ -25,9 +25,15 @@ exports.getAllNotices = async (req, res) => {
 
 exports.createNotice = async (req, res) => {
     try {
+        let data = { ...req.body,created_by:req.user._id,featuredImage: req.files.featuredImage[0], featuredIcon: req.files.featuredIcon[0]};
 
-        let data = { ...req.body,featuredImage: req.files.featuredImage[0]};
-    
+        if((data.tags || !Array.isArray(data.tags ) && data.tags !== '')){
+          data.tags = data.tags.split(',');
+        }
+        else{
+          data.tags = []
+        }
+        
         Notices.create(data).then((result)=>{
           if (result) {
             res.status(200).json({

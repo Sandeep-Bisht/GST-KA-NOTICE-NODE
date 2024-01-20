@@ -12,19 +12,30 @@ const NoticesSchema = new Schema({
         type : String,
         required : true,
         unique:true, 
-        sparse: true
     },
-    description : {
-        type : String
+    starting_price : {
+        type : String,
+        required:true
     },
-    price : {
-        type : String
-    },
+    featuredIcon: JSON,
     featuredImage: JSON,
+    excerpt: String,
+    description: String,
+    tags: JSON,
+    seo_title:String,
     status:{
         type : String,
         required : true,
         default:'Active',
+    },
+    created_by:{
+        required:true,
+        type : Schema.Types.ObjectId,
+        ref : "users" 
+    },
+    modified_by:{
+        type : Schema.Types.ObjectId,
+        ref : "users" 
     }
 
 }, {timestamps : true})
