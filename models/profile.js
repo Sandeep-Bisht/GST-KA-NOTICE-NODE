@@ -37,7 +37,7 @@ const ProfileSchema = new Schema({
     status:{
         type : String,
         required : true,
-        default:'Active',
+        default:'active',
     },
 
 }, { timestamps : true})
