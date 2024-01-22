@@ -4,7 +4,7 @@ const UserRoles =require('../../models/user_roles')
 exports.setProfile = async (req, res) => {
     try{
         // delete data.image;
-        let data = { ...req.body, featuredIcon: req.files[0]};
+        let data = { ...req.body, image: req.files[0]};
 
         updateProfile({user:req.user,profile:data}).then((response)=>{
             return res.status(response.status).json(response);
@@ -30,7 +30,6 @@ exports.setProfile = async (req, res) => {
 exports.getProfile = async (req, res) => {
     try{
         const existingProfile = await Profile.findOne({'user_id':req.user._id});
-        console.log("inside existingProfile", existingProfile)
         const role = await UserRoles.findOne({'user_id':req.user._id});       
         return res.send({...existingProfile._doc,role:role.role_id});
     }
