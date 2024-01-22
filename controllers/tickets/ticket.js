@@ -189,7 +189,6 @@ exports.uploadAskedDocs = async (req, res) => {
               message:"please provide correct information 3"
             })
           }
-
       }
       else{
       return res.status(401).json({
