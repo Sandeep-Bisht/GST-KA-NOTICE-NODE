@@ -69,3 +69,46 @@ exports.getByTicketNo = async (req, res) => {
         })
       }
 }
+
+exports.askForPayment = async (req, res) => {
+  try{
+    
+      const {ticketNo} = {...req.params};
+      var {asked_price,documentRequested} = {...req.body}
+
+      if(!(documentRequested && Array.isArray(documentRequested) && documentRequested.length > 0)){
+        documentRequested = [];
+      }
+
+      const roleId = await UserRole.findOne({user_id:req.user._id}).select('role_id');
+      
+      if(!roleId || !roleId.role_id){
+          return res.status(401).json({
+                    error:true,
+                    message:"Unautherized user role.",
+                  })
+      }
+
+      if(roleId.role_id == process.env.ROLE_ADMIN){
+          const updateFields = {asked_price,documentRequested,'status':'Payment Pending'}
+          const ticketDetails =  await Tickets.findOneAndUpdate(
+            {ticketNo, 'status': 'progress'},
+            { $set: updateFields },
+            { new: true }
+          )
+
+          return res.status(200).json(ticketDetails);
+      }
+
+      return res.status(401).json({
+          error:true,
+          message:"Unautherized role.",
+        })
+    }
+    catch(error){
+      res.status(500).json({
+        error:true,
+        message:"please provide correct information"
+      })
+    }
+}

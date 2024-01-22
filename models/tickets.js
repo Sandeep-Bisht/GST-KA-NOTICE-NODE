@@ -28,6 +28,7 @@ const ticketSchema = new Schema({
     documentRequested:{
         type:JSON           //Manage required document in functionality.
     },
+    otherDocuments:JSON,
     status:{
         type : String,
         required : true,
