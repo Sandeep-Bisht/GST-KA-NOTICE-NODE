@@ -4,23 +4,37 @@ const Cache = new NodeCache();
 const sendOTP = require('../../config/sendOTP');
 const createNewUser = require('../../services/createNewUser')
 const UserRoles = require('../../models/user_roles')
-const users = require('../../models/users')
+const Users = require('../../models/users')
 const transporter = require('../../config/nodeMailer');
 
 exports.signup = async (req, res) => {
     try{
-        let { username } = req.body
+        let { email, mobile } = req.body
         const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i;
-        if(username){
-            if(/^[0-9]{10}$/.test(username) || emailRegex.test(username)){
-                
-            var otp = Math.floor(100000 + Math.random() * 900000);
-            otp = otp.toString();
-            Cache.set(username, otp, 300);  //store otp for 300 seconds in catch
+        if(email && mobile){
+            if(/^[0-9]{10}$/.test(mobile) && emailRegex.test(email)){
 
-            if(await Cache.get(username)){
-                if(/^[0-9]{10}$/.test(username)){
-                    sendOTP('62385ab87f0231333a04e445', otp, username).then((message) => {
+                const user = await Users.findOne({
+                $or: [
+                  { email: email },
+                  { mobile: mobile }
+                ]
+              });
+
+
+              if(user){
+                res.status(200).json({
+                    error: false,
+                    code : 'USEREXIST',
+                    message: "User already exist"
+                })
+              }else{
+                var otp = Math.floor(100000 + Math.random() * 900000);
+                otp = otp.toString();
+                Cache.set(mobile, otp, 300);  //store otp for 300 seconds in catch
+                if(await Cache.get(mobile)){
+                // if(/^[0-9]{10}$/.test(mobile)){
+                    sendOTP('62385ab87f0231333a04e445', otp, mobile).then((message) => {
                         return res.status(200).json({
                             error:false,
                             "message":"OTP send successfully."
@@ -32,32 +46,32 @@ exports.signup = async (req, res) => {
                             message:"Error sending otp."
                         })
                     });
-            }
+            // }
 
-            if(emailRegex.test(username)){
+            // if(emailRegex.test(email)){
         
-                  const mailOptions = {
-                    from: process.env.ADMIN_EMAIL || "info@mylookbook.in",
-                    to: username,
-                    subject: "OTP for Login",
-                    html: `<p>Your OTP is ${otp}. It is valid for 5 minutes.</p>`,
-                  };
+            //       const mailOptions = {
+            //         from: process.env.ADMIN_EMAIL || "info@mylookbook.in",
+            //         to: email,
+            //         subject: "OTP for Login",
+            //         html: `<p>Your OTP is ${otp}. It is valid for 5 minutes.</p>`,
+            //       };
         
-                   transporter.sendMail(mailOptions,(err,info)=>{
-                    if (err) {
-                        return res.status(500).json({
-                            err,
-                            error:true,
-                            message: "Error sending mail.",
-                          });
-                      } else {
-                        return res.status(200).json({
-                            error:false,
-                            "message":"OTP send successfully."
-                        })
-                      }
-                   });
-            }
+            //        transporter.sendMail(mailOptions,(err,info)=>{
+            //         if (err) {
+            //             return res.status(500).json({
+            //                 err,
+            //                 error:true,
+            //                 message: "Error sending mail.",
+            //               });
+            //           } else {
+            //             return res.status(200).json({
+            //                 error:false,
+            //                 "message":"OTP send successfully."
+            //             })
+            //           }
+            //        });
+            // }
 
             }
             else{
@@ -67,9 +81,12 @@ exports.signup = async (req, res) => {
                     });
     
             }
+              }
+                
+            
         }
         else{
-            return res.status(400).send("Invalid username.")
+            return res.status(400).send("Invalid User.")
         }
       
         }
@@ -91,90 +108,45 @@ exports.signup = async (req, res) => {
 
 exports.signupVerify = async(req,res) => {
     try{
-        let { username, otp } = req.body
-        const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i;
+        let { payload, otp } = req.body;
+        let { fullname, mobile, email, gst_no } = payload
+         const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i;
 
-        if(!otp || !username){
+        if(!otp || !mobile || !fullname  || !email){
            return res.status(400).json({
                 error:true,
-                message:"Username and otp is required."
+                message:"Invalid Payload."
             })
         }
 
-        if(!(/^[0-9]{10}$/.test(username) || emailRegex.test(username))){
+        if(!(/^[0-9]{10}$/.test(mobile))){
             return res.status(400).json({
                 error:true,
                 message:"Invalid username.."
             })
         }
 
-        const cachedOTP = Cache.get(username);
+        const cachedOTP = await Cache.get(mobile);
 
-        if (otp && cachedOTP == otp && cachedOTP) {
-            Cache.del(username); // Remove the OTP from the cache to prevent further use
+        if (otp && cachedOTP && cachedOTP == otp ) {
+            Cache.del(mobile); // Remove the OTP from the cache to prevent further use
 
-            users.findOne({
-                $or: [
-                  { email: username },    // Check for duplicate email
-                  { mobile: username }  // Check for duplicate mobile
-                ]
-              })
-              .then(async(result)=>{
+            let newUserData = {
+                user:{mobile, email,usertype : 'mobile'},
+                role:'user',
+                profile:{fullName:fullname, mobile, email, gst_no, usertype : 'mobile'}
+              }
 
-                if(result){
-
-                    try{
-                        let roleId = await UserRoles.findOne({ user_id: result._id });
-                        let token = jwt.sign({userID:result._id,role:roleId.role_id},process.env.JWT_KEY || "guyr7fyudurdtyidyditdrciyfxcftgdxirx",{ expiresIn: "30d" })
-                        return res.status(200).json({
-                                          error: false,
-                                          token: token,
-                                          message: "User logged in successfully!",
-                                        });
-                      }
-                      catch(error){
-                        res.status(400).json({
-                          error:true,
-                          message: "Error Creating user token.",
-                        });
-                      }
-                    
-                }
-                else{
-                    let userData = {};
-
-                    if(emailRegex.test(username)){
-                        userData.usertype = 'email';
-                        userData.email = username;
-                    }
-                    else{
-                        userData.usertype = 'mobile';
-                        userData.mobile = username;
-                    }
-                    
-                    let newUserData = {
-                        user:userData,
-                        role:'user',
-                        profile:userData
-                      }
-        
-                    createNewUser(newUserData).then((response)=>{
-                        return res.status(response.status).json(response);
-                    })
-                    .catch((error)=>{
-                      res.status(400).json({
-                        error:true,
-                        message: "Error creating new user.",
-                      });
-                    });
-                }
-              })
-              .catch((err)=>{
-                res.status(400).json({
-                    error:true,
-                    message: "Error Finding user.",
-                  });
+            createNewUser(newUserData).then((response)=>{
+                return res.status(response.status).json(response);
+            })
+            .catch((error)=>{
+              return res.status(400).json({
+                error:true,
+                message: "Error creating new user.",
               });
+            });
+
 
         }
         else{
@@ -191,3 +163,4 @@ exports.signupVerify = async(req,res) => {
         })
     }
 }
+

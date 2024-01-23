@@ -8,16 +8,22 @@ const ProfileSchema = new Schema({
         unique : true,
         ref : "users"       
     },
-    fullName: String,
+    fullName: {
+        type:String,
+        required:true
+    },
+    gst_no : {
+            type : String
+        },
     email: {
         type : String,
         unique : true,
-        sparse: true
+        required: true
     },
     mobile: {
         unique : true,
         type : String,
-        sparse: true
+        required: true
     },
     gender: {
         type: String,

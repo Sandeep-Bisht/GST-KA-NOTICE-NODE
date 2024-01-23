@@ -37,25 +37,12 @@ exports.googleSignup = async (req, res) => {
                               message: "Error Creating user token.",
                             });
                           }
-                    }
-                    else{
-
-                        let newUserData = {
-                          user:{usertype:'google',email: userData.email},
-                          role:'user',
-                          profile:{fullName:userData.name,email: userData.email,usertype:'google'}
-                        }
-
-                        createNewUser(newUserData).then((response)=>{
-                            return res.status(response.status).json(response);
-                        })
-                        .catch((error)=>{
-                          res.status(400).json({
-                            error:true,
-                            message: "Error creating new user.",
-                          });
-                        })
-                    }
+                    } else{
+                      res.status(400).json({
+                        error:true,
+                        message: "No user associated with this email.",
+                      });
+                    }                   
                   })
                   .catch((err)=>{
                     res.status(400).json({
