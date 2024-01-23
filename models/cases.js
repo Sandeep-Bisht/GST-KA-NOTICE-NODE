@@ -8,26 +8,19 @@ const caseSchema = new Schema({
         type : Schema.Types.ObjectId,
         ref : "users" 
     },
+    caseNo:{
+        required:true,
+        type : String,
+        unique:true,
+    },
     ticket:{
         required:true,
         type : Schema.Types.ObjectId,
-        ref : "tickets" 
+        ref : "tickets",
+        unique:true,
     },
     reply_doc:{
-        required:true,
-        type : Schema.Types.ObjectId,
-        ref : "notices" 
-    },
-    price:{
-        required:true,
-        type : String
-    },
-    document:{
-        required:true,
         type:JSON
-    },
-    documentRequested:{
-        type:JSON           //Manage required document in functionality.
     },
     status:{
         type : String,
