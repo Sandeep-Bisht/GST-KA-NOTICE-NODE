@@ -1,5 +1,6 @@
 
 const Tickets = require('../models/tickets'); // Import your tickets model
+const Cases = require('../models/cases')
 
 const generateUniqueNo = async (prefix) => {
   try {
@@ -18,7 +19,7 @@ const generateUniqueNo = async (prefix) => {
    if(prefix === 'T'){
     previousdata = await Tickets.find().select('ticketNo');
    }else{
-    previousdata = await Tickets.find().select('ticketNo');
+    previousdata = await Cases.find().select('caseNo');
    }
 
    let uniqueNo = await UniqueNo();
@@ -27,7 +28,7 @@ const generateUniqueNo = async (prefix) => {
     let randomNumber = prefix + Math.floor(100000 + Math.random() * 900000);
     if(previousdata && Array.isArray(previousdata)){
 
-        if(previousdata.some(item => item.ticketNo == randomNumber)){
+        if(prefix === 'T' ? previousdata.some(item => item.ticketNo == randomNumber) : previousdata.some(item => item.caseNo == randomNumber)){
             generateUniqueNo()
         }
         else{
@@ -45,7 +46,7 @@ const generateUniqueNo = async (prefix) => {
     return {
       error: true,
       status: 500,
-      message: 'Error creating new user.',
+      message: 'Error creating Unique Code.',
     };
   }
 };
