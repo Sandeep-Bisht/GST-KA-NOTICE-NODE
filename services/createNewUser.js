@@ -23,7 +23,7 @@ const createNewUser = async (data) => {
       return {
         error: true,
         status: 500,
-        message: 'Error creating new user.',
+        message: 'Error creating new user .',
       };
     }
 
@@ -33,7 +33,7 @@ const createNewUser = async (data) => {
       return {
         error: true,
         status: 500,
-        message: 'Role not found.',
+        message: 'Role not found .',
       };
     }
 
@@ -43,7 +43,7 @@ const createNewUser = async (data) => {
       return {
         error: true,
         status: 500,
-        message: 'Error assigning role.',
+        message: 'Error assigning role .',
       };
     }
 
@@ -55,7 +55,7 @@ const createNewUser = async (data) => {
       return {
         error: true,
         status: 500,
-        message: 'Error creating profile.',
+        message: 'Error creating profile .',
       };
     }
 
@@ -65,11 +65,12 @@ const createNewUser = async (data) => {
       error: false,
       status: 201,
       token: token,
-      message: 'User created successfully!',
+      message: 'User created successfully !',
     };
     
   } catch (error) {
     return {
+      errorMessage:error.message,
       error: true,
       status: 500,
       message: 'Error creating new user.',
