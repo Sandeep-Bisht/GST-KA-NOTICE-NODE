@@ -135,10 +135,34 @@ exports.uploadAskedDocs = async (req, res) => {
       }
 
       if(roleId.role_id == process.env.ROLE_USER){
+
+        if(title == 'otherDocuments'){
           let ticketData = await Tickets.findOne({user_id:req.user._id,ticketNo,'status':'Payment Pending'});
-          let documentRequested = [...ticketData?.documentRequested];
+          let otherDocuments = ticketData?.otherDocuments;
+
+          if(otherDocuments && Array.isArray(otherDocuments)){
+            otherDocuments = [...ticketData?.otherDocuments, ...req.files];
+          }
+          else{
+            otherDocuments = req.files;
+          }
+
+          let ticketNewDetails =  await Tickets.findOneAndUpdate(
+            {user_id:req.user._id,ticketNo,'status':'Payment Pending'},
+            { $set: {'otherDocuments':otherDocuments} },
+            { new: true }
+          )
+
+          return res.status(200).json(ticketNewDetails);
+        }
+      
+          let ticketData = await Tickets.findOne({user_id:req.user._id,ticketNo,'status':'Payment Pending'});
+          let documentRequested = ticketData?.documentRequested;
 
           if(documentRequested && Array.isArray(documentRequested)){
+
+              documentRequested =[...ticketData?.documentRequested]
+
               let currentDocumentIndex = documentRequested.findIndex(el => el.title == title)
               if(currentDocumentIndex > -1){
                 let updatedDocument = {...documentRequested[currentDocumentIndex],document:req.files[0] }
@@ -165,6 +189,7 @@ exports.uploadAskedDocs = async (req, res) => {
               message:"please provide correct information 3"
             })
           }
+
       }
       else{
       return res.status(401).json({
@@ -177,6 +202,37 @@ exports.uploadAskedDocs = async (req, res) => {
       return res.status(500).json({
         error:true,
         message:"please provide correct information 4"
+      })
+    }
+}
+
+
+exports.createOrder = async (req, res) => {
+  try{
+      let {ticketNo} = {...req.params};
+      const roleId = await UserRole.findOne({user_id:req.user._id}).select('role_id');
+      
+      if(!roleId || !roleId.role_id){
+          return res.status(401).json({
+                    error:true,
+                    message:"Unautherized user role.",
+                  })
+      }
+
+      if(roleId.role_id == process.env.ROLE_USER){
+          let allTickets = await Tickets.find({user_id:req.user._id,ticketNo}).populate('notice');
+          return res.status(200).json(allTickets);
+      }
+
+      return res.status(401).json({
+          error:true,
+          message:"Unautherized role.",
+        })
+    }
+    catch(error){
+      res.status(500).json({
+        error:true,
+        message:"please provide correct information"
       })
     }
 }
