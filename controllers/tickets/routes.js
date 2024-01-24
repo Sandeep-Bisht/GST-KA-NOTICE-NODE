@@ -1,6 +1,6 @@
 const router = require("express").Router()
 
-const { getAllTickets, getByTicketNo, askForPayment, uploadAskedDocs, createOrder, verifyPayment, failedPayment} = require('./ticket')
+const { getAllTickets, getByTicketNo, askForPayment, uploadAskedDocs, createOrder, verifyPayment, failedPayment, removeOtherDocuments} = require('./ticket')
 const passport = require("passport")
 const upload = require('../../config/multer')
 
@@ -12,5 +12,6 @@ router.post('/create-order/:ticketNo',passport.authenticate('jwt', {session:fals
 router.post('/payment/verify',passport.authenticate('jwt', {session:false}),verifyPayment)
 router.post('/payment/failed',passport.authenticate('jwt', {session:false}),failedPayment)
 router.post('/upload-asked-documents/:ticketNo',passport.authenticate('jwt', {session:false}), upload.any('files'), uploadAskedDocs)
+router.post('/remove-other-documents/:ticketNo',passport.authenticate('jwt', {session:false}), removeOtherDocuments)
 
 module.exports = router

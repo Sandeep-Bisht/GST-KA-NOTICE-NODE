@@ -2,7 +2,7 @@ const Notices = require('../../../models/notices')
 
 exports.getAllNotices = async (req, res) => {
     try{
-        await Notices.find().populate('service').then((result)=>{
+        await Notices.find().populate('service').sort({ starting_price: 1 }).then((result)=>{
           if(result && result.length>0)
           {
             res.status(200).json(result)
