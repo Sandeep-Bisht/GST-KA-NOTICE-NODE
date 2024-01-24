@@ -19,6 +19,16 @@ const caseSchema = new Schema({
         ref : "tickets",
         unique:true,
     },
+    paymentID:{
+        required:true,
+        type : Schema.Types.ObjectId,
+        ref : "payments",
+        unique:true,
+    },
+    paid_amount:{
+        required:true,
+        type : String,
+    },
     reply_doc:{
         type:JSON
     },
