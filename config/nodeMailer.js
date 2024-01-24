@@ -1,13 +1,12 @@
 const nodemailer = require("nodemailer");
 
 module.exports = nodemailer.createTransport({
-  service: "smtppro.zoho.com",
-  port: 587,
+  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
   auth: {
-    user: process.env.ADMIN_EMAIL || "info@mylookbook.in",
-    pass: process.env.ADMIN_PASS || "Lookbook@123",
+    user: process.env.INFO_EMAIL || "info@gstkanotice.com",
+    pass: process.env.EMAIL_APP_PASS || "UPDATE ENV APP CODE",
   },
-  tls: {
-    rejectUnauthorized: false, // Add this line to disable certificate verification
-  },
-})
+ });
