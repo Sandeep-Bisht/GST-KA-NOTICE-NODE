@@ -62,3 +62,27 @@ exports.createNotice = async (req, res) => {
         res.status(500).json({error:true, message: 'Internal server error' });
       }
 }
+
+exports.getNoticeBySeoTitle = async (req, res) => {  
+  try{
+    let {seo_title} = {...req.params};
+      await Notices.findOne({seo_title}).populate('service').then((result)=>{
+        if(result)
+        {
+          res.status(200).json(result)
+        }
+        else{
+          res.status(400).json({
+            error:true,
+            message:"No Data found",
+          })
+        }
+      })
+    }
+    catch(error){
+      res.status(500).json({
+        error:true,
+        message:"please provide correct information"
+      })
+    }
+}
