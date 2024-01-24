@@ -205,7 +205,7 @@ exports.uploadAskedDocs = async (req, res) => {
     catch(error){
       return res.status(500).json({
         error:true,
-        message:"please provide correct information 4"
+        message:"please provide correct information"
       })
     }
 }
@@ -414,5 +414,60 @@ exports.failedPayment = async (req,res) => {
   } catch (error) {
     res.status(500).json({ message: "Internal Server Error!" });
     console.log(error);
+  }
+}
+
+exports.removeOtherDocuments = async (req,res) => {
+  try{
+    let {ticketNo} = {...req.params};
+    let {otherDocuments} = {...req.body}
+
+    if(!otherDocuments || !ticketNo){
+      res.status(400).json({
+        error:true,
+        message:"please provide correct information"
+      })
+    }
+
+    const roleId = await UserRole.findOne({user_id:req.user._id}).select('role_id');
+    
+    if(!roleId || !roleId.role_id){
+        return res.status(401).json({
+                  error:true,
+                  message:"Unautherized user role.",
+                })
+    }
+
+    if(roleId.role_id == process.env.ROLE_USER){
+
+        if(Array.isArray(otherDocuments)){
+          let ticketNewDetails =  await Tickets.findOneAndUpdate(
+            {user_id:req.user._id,ticketNo,'status':'Payment Pending'},
+            { $set: {'otherDocuments':otherDocuments} },
+            { new: true }
+          ).populate('notice');
+
+          return res.status(200).json(ticketNewDetails);
+        }
+        else{
+          return res.status(400).json({
+            error:true,
+            message:"please provide correct information"
+          })
+        }
+    
+    }
+    else{
+    return res.status(401).json({
+              error:true,
+              message:"Unautherized role.",
+            })
+    }
+  }
+  catch(error){
+    return res.status(500).json({
+      error:true,
+      message:"please provide correct information"
+    })
   }
 }
