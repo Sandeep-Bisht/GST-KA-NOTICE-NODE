@@ -360,7 +360,12 @@ exports.verifyPayment = async (req,res) => {
       ).populate('notice');
 
       const caseNo = await generateUniqueNo('C')
-      let data = { user_id:req.user._id, caseNo, ticket:ticketDetails._id, created_by:req.user._id};
+      let data =  { user_id: req.user._id, 
+                    caseNo, 
+                    ticket:ticketDetails._id, 
+                    paymentID:payment._id, 
+                    paid_amount:ticketDetails.asked_price,
+                    created_by:req.user._id};
 
       Cases.create(data).then((result)=>{
         if (result) {
