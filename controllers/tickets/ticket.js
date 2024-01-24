@@ -126,7 +126,7 @@ exports.uploadAskedDocs = async (req, res) => {
       if(!ticketNo || !title){
         res.status(400).json({
           error:true,
-          message:"please provide correct information 1"
+          message:"please provide correct information"
         })
       }
 
@@ -156,7 +156,7 @@ exports.uploadAskedDocs = async (req, res) => {
             {user_id:req.user._id,ticketNo,'status':'Payment Pending'},
             { $set: {'otherDocuments':otherDocuments} },
             { new: true }
-          )
+          ).populate('notice');
 
           return res.status(200).json(ticketNewDetails);
         }
@@ -177,21 +177,21 @@ exports.uploadAskedDocs = async (req, res) => {
                   {user_id:req.user._id,ticketNo,'status':'Payment Pending'},
                   { $set: {'documentRequested':documentRequested} },
                   { new: true }
-                )
+                ).populate('notice');
       
                 return res.status(200).json(ticketDetails);
               }
               else{
                 return res.status(400).json({
                   error:true,
-                  message:"please provide correct information 2"
+                  message:"please provide correct information"
                 })
               }
           }
           else{
             return res.status(400).json({
               error:true,
-              message:"please provide correct information 3"
+              message:"please provide correct information"
             })
           }
       }
@@ -233,7 +233,7 @@ exports.createOrder = async (req, res) => {
 
       if(roleId.role_id == process.env.ROLE_USER){
 
-          let ticketDetails = await Tickets.findOne({user_id:req.user._id, ticketNo, status});
+          let ticketDetails = await Tickets.findOne({user_id:req.user._id, ticketNo, status}).populate('notice');;
 
           if(!ticketDetails){
             return res.status(400).json({
@@ -357,9 +357,9 @@ exports.verifyPayment = async (req,res) => {
       let ticketDetails =  await Tickets.findByIdAndUpdate(payment.reference_id,
           { $set: {'status':'Paid'} },
           { new: true }
-      )
+      ).populate('notice');
 
-      const caseNo = await generateUniqueNo('Case')
+      const caseNo = await generateUniqueNo('C')
       let data = { user_id:req.user._id, caseNo, ticket:ticketDetails._id, created_by:req.user._id};
 
       Cases.create(data).then((result)=>{

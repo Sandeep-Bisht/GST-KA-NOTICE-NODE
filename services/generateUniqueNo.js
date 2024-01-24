@@ -6,7 +6,7 @@ const generateUniqueNo = async (prefix) => {
   try {
     // return prefix;
 
-   if(!prefix || (prefix != 'T' && prefix != "Case")){
+   if(!prefix || (prefix != 'T' && prefix != "C")){
     return {
         error: true,
         status: 400,
