@@ -25,7 +25,6 @@ exports.getAllServices = async (req, res) => {
 
 exports.createService = async (req, res) => {
     try {
-      
         let data = { ...req.body, created_by:req.user._id, featuredImage: req.files.featuredImage[0], featuredIcon: req.files.featuredIcon[0]};
     
         Services.create(data).then((result)=>{
@@ -46,13 +45,12 @@ exports.createService = async (req, res) => {
         }).catch((error)=>{
           res.status(400).json({
             error:true,
-            errorMessage:error.message,
             status: 400,
             message: "Please provide correct information"
           });
         })
   
       } catch (error) {
-        res.status(500).json({error:true, message: 'Internal server error' });
+        res.status(500).json({errorMessage:error.message,error:true, message: 'Internal server error' });
       }
 }
