@@ -9,7 +9,7 @@ const transporter = require('../../config/nodeMailer');
 
 exports.signup = async (req, res) => {
     try{
-        let { email, mobile } = req.body
+        let { email, mobile, fullname } = req.body
         const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i;
         if(email && mobile){
             if(/^[0-9]{10}$/.test(mobile) && emailRegex.test(email)){
@@ -33,45 +33,63 @@ exports.signup = async (req, res) => {
                 otp = otp.toString();
                 Cache.set(mobile, otp, 300);  //store otp for 300 seconds in catch
                 if(await Cache.get(mobile)){
-                // if(/^[0-9]{10}$/.test(mobile)){
-                    sendOTP('62385ab87f0231333a04e445', otp, mobile).then((message) => {
-                        return res.status(200).json({
-                            error:false,
-                            "message":"OTP send successfully."
-                        })
-                    })
-                    .catch((error) => {
-                        return res.status(500).json({
-                            error:true,
-                            message:"Error sending otp."
-                        })
-                    });
-            // }
 
-            // if(emailRegex.test(email)){
-        
-            //       const mailOptions = {
-            //         from: process.env.ADMIN_EMAIL || "info@mylookbook.in",
-            //         to: email,
-            //         subject: "OTP for Login",
-            //         html: `<p>Your OTP is ${otp}. It is valid for 5 minutes.</p>`,
-            //       };
-        
-            //        transporter.sendMail(mailOptions,(err,info)=>{
-            //         if (err) {
-            //             return res.status(500).json({
-            //                 err,
-            //                 error:true,
-            //                 message: "Error sending mail.",
-            //               });
-            //           } else {
-            //             return res.status(200).json({
-            //                 error:false,
-            //                 "message":"OTP send successfully."
-            //             })
-            //           }
-            //        });
-            // }
+                const mailOptions = {
+                    from: process.env.INFO_EMAIL || "info@gstkanotice.com",
+                    to: email,
+                    subject: "Your One-Time Password (OTP) for Verification and Login",
+                    html: `
+                    <p>Dear ${fullname},</p>
+                    <p>We hope this email finds you well. As part of our ongoing commitment to ensuring the security of your account, we have initiated a verification process for your login. To proceed, please use the following One-Time Password (OTP):</p>
+                    <p>
+                    Your OTP: <b>${otp}</b>
+                    </p>
+                    <p>
+                    Please enter this OTP on the login page when prompted. It is crucial to keep your account secure, and the OTP serves as an additional layer of protection.</p>
+                    <p>
+                    If you did not request this OTP or if you have any concerns about the security of your account, please contact our support team immediately at <b>help@gstkanotice.com</b> or call us at <b>+91 7817010434</b>
+                    Thank you for your cooperation in keeping your account safe.
+                    </p>`,
+                  };
+
+                  const sendOtpByEmailPromise = new Promise((resolve, reject) => {
+                    transporter.sendMail(mailOptions, (err, info) => {
+                        if (err) {
+                            resolve(false);
+                        } else {
+                            resolve(true);
+                        }
+                    });
+                });
+
+                const sendOtpByMobilePromise = sendOTP('62385ab87f0231333a04e445', otp, mobile)
+                                                .then(() => true)
+                                                .catch(() => false);
+
+
+                
+            Promise.all([sendOtpByEmailPromise, sendOtpByMobilePromise])
+            .then(([sendOtpByEmail, sendOtpByMobile]) => {
+                if (sendOtpByEmail || sendOtpByMobile) {
+                    return res.status(200).json({
+                        error: false,
+                        message: "OTP sent successfully."
+                    });
+                } else {
+                    return res.status(500).json({
+                        error: true,
+                        sendOtpByEmail,
+                        sendOtpByMobile,
+                        message: "Error sending OTP."
+                    });
+                }
+            })
+            .catch((error) => {
+                return res.status(500).json({
+                    error: true,
+                    message: "Internal server error."
+                });
+            });
 
             }
             else{

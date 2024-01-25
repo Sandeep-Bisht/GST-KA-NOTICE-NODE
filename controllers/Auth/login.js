@@ -2,9 +2,9 @@ var jwt = require('jsonwebtoken');
 const NodeCache = require('node-cache');
 const Cache = new NodeCache();
 const sendOTP = require('../../config/sendOTP');
-const createNewUser = require('../../services/createNewUser')
 const UserRoles = require('../../models/user_roles')
 const users = require('../../models/users')
+const profile = require('../../models/profile')
 const transporter = require('../../config/nodeMailer');
 
 exports.login = async (req, res) => {
@@ -24,6 +24,8 @@ exports.login = async (req, res) => {
                     message : "Please Signup"
                 })
               } else{
+                const userProfile = await profile.findOne({user_id:user._id}).select('fullName');
+
                 if(/^[0-9]{10}$/.test(username) || emailRegex.test(username)){
                 
                     var otp = Math.floor(100000 + Math.random() * 900000);
@@ -46,39 +48,51 @@ exports.login = async (req, res) => {
                             });
                     }
         
-                    // if(emailRegex.test(username)){
+                    if(emailRegex.test(username)){
                 
-                    //       const mailOptions = {
-                    //         from: process.env.ADMIN_EMAIL || "info@mylookbook.in",
-                    //         to: username,
-                    //         subject: "OTP for Login",
-                    //         html: `<p>Your OTP is ${otp}. It is valid for 5 minutes.</p>`,
-                    //       };
+                let fullName = userProfile.fullName ? userProfile.fullName : 'user';
+                const mailOptions = {
+                    from: process.env.INFO_EMAIL || "info@gstkanotice.com",
+                    to: username,
+                    subject: "Your One-Time Password (OTP) for Verification and Login",
+                    html: `
+                    <p>Dear ${fullName},</p>
+                    <p>We hope this email finds you well. As part of our ongoing commitment to ensuring the security of your account, we have initiated a verification process for your login. To proceed, please use the following One-Time Password (OTP):</p>
+                    <p>
+                    Your OTP: <b>${otp}</b>
+                    </p>
+                    <p>
+                    Please enter this OTP on the login page when prompted. It is crucial to keep your account secure, and the OTP serves as an additional layer of protection.</p>
+                    <p>
+                    If you did not request this OTP or if you have any concerns about the security of your account, please contact our support team immediately at <b>help@gstkanotice.com</b> or call us at <b>+91 7817010434</b>
+                    Thank you for your cooperation in keeping your account safe.
+                    </p>`,
+                  };
                 
-                    //        transporter.sendMail(mailOptions,(err,info)=>{
-                    //         if (err) {
-                    //             return res.status(500).json({
-                    //                 err,
-                    //                 error:true,
-                    //                 message: "Error sending mail.",
-                    //               });
-                    //           } else {
-                    //             return res.status(200).json({
-                    //                 error:false,
-                    //                 "message":"OTP send successfully."
-                    //             })
-                    //           }
-                    //        });
-                    // }
-        
+                transporter.sendMail(mailOptions,(err,info)=>{
+                            if (err) {
+                                return res.status(500).json({
+                                    err,
+                                    error:true,
+                                    message: "Error sending mail.",
+                                  });
+                              } else {
+                                return res.status(200).json({
+                                    error:false,
+                                    "message":"OTP send successfully."
+                                })
+                              }
+                           });
                     }
-                    else{
+        
+                }
+                else{
                             res.status(400).json({
                               error:true,
                               message: "Something went wrong while generating OTP.",
                             });
             
-                    }
+                }
                 }
                 else{
                     return res.status(400).send("Invalid details.")
