@@ -5,6 +5,8 @@ const Payment = require('../../models/payments')
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
 const generateUniqueNo = require('../../services/generateUniqueNo')
+const transporter = require('../../config/nodeMailer');
+const profile = require('../../models/profile')
 
 exports.getAllTickets = async (req, res) => {
     try{
@@ -95,12 +97,51 @@ exports.askForPayment = async (req, res) => {
       }
 
       if(roleId.role_id == process.env.ROLE_ADMIN){
-          const updateFields = {asked_price,documentRequested,'status':'Payment Pending'}
+        
+        
+        const updateFields = {asked_price,documentRequested,'status':'Payment Pending'}
+          
           const ticketDetails =  await Tickets.findOneAndUpdate(
             {ticketNo, 'status': 'progress'},
             { $set: updateFields },
             { new: true }
           )
+
+          const userProfile = await profile.findOne({user_id:ticketDetails.user_id});
+          let fullName = userProfile.fullName;
+          let email = userProfile.email;
+          let dateOption = { day: '2-digit', month: 'short', year: 'numeric'};
+          let date = new Intl.DateTimeFormat('en-US', dateOption).format(new Date());
+
+          const mailOptions = {
+            from: process.env.INFO_EMAIL || "info@gstkanotice.com",
+            to: email,
+            subject: `Payment Request for Ticket No: ${ticketNo}`,
+            html: `<p>Dear <b>${fullName}</b>,</p>
+
+            <p>We trust this message finds you well. We would like to inform you that your recent request, identified by the ticket number <b>${ticketNo}</b>, has been processed, and we are now ready to proceed with the necessary payment.</p>
+            
+            <p>Amount: <b>${new Intl.NumberFormat('en-IN', {
+              style: 'currency',
+              currency: 'INR'
+            }).format(asked_price)
+          } /-
+          </b></p>
+            <p>Due Date: ${date} (3 Days from the Notice updated/ Payment requested dated)</p>
+            
+            <p>To facilitate the payment, please log in to your account on our portal and follow these steps:</p>
+            <ul>
+              <li><b>Log in to Your Account:</b> Visit [Portal URL] and log in using your credentials.</li>
+              <li><b>Navigate to Tickets Section:</b> Once logged in, navigate to the “Ticket"</li>
+              <li><b>Select Your Ticket:</b> Locate the invoice corresponding to the ticket number <b>${ticketNo}</b> and click on it for detailed information.</li>
+              <li><b>Make Payment:</b> Use the "Pay Now" option to complete the payment process securely.</li>
+            </ul>
+            <p>Please ensure that the payment is made by the specified due date. If you encounter any issues during the payment process or if you have any questions regarding the invoice, feel free to reach out to our support team at <b>help@gstkanotice.com</b> or call us at <b>+91 7817010434</b> . We are here to assist you.</p>
+            <p>We appreciate your prompt attention to this matter. Thank you for choosing Us</p>
+            `,
+          };
+        
+          transporter.sendMail(mailOptions);
 
           return res.status(200).json(ticketDetails);
       }
@@ -354,10 +395,44 @@ exports.verifyPayment = async (req,res) => {
         { $set: {'paymentId':razorpay_payment_id,'payment_status':'success'} },
         { new: true });
 
-      let ticketDetails =  await Tickets.findByIdAndUpdate(payment.reference_id,
-          { $set: {'status':'Paid'} },
-          { new: true }
-      ).populate('notice');
+        let ticketDetails =  await Tickets.findByIdAndUpdate(payment.reference_id,
+            { $set: {'status':'Paid'} },
+            { new: true }
+        ).populate('notice');
+
+        const userProfile = await profile.findOne({user_id:req.user._id});
+        const fullName = userProfile.fullName;
+        const email = userProfile.email;
+        let dateOption = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false };
+        let date = new Intl.DateTimeFormat('en-US', dateOption).format(new Date());
+
+        const paymentMailOptions = {
+          from: process.env.INFO_EMAIL || "info@gstkanotice.com",
+          to: email,
+          subject: `Payment Successfully Processed for Ticket No: ${ticketDetails.ticketNo}`,
+          html: `<p>Dear <b>${fullName}</b>,</p>
+          <p>We hope this message finds you well. We are pleased to inform you that the payment for your recent request, associated with the ticket number <b>${ticketDetails.ticketNo}</b>, has been successfully processed.</p>
+          
+          <p><b>Payment Status:</b> Paid</p>
+        <p><b> Amount:</b> ${new Intl.NumberFormat('en-IN', {
+          style: 'currency',
+          currency: 'INR'
+        }).format(ticketDetails.asked_price)
+      } /-</p>
+          <p><b>Transaction ID:</b> ${razorpay_payment_id}</p>
+          <p><b>Date and Time:</b> ${date}</p>
+          
+          <p>We appreciate your prompt attention to this matter, and we would like to thank you for choosing GST KA NOTICE. </p>
+          
+        <p> Your timely payment ensures the continued smooth operation of your services.</p>
+          <p>If you have any further questions or require additional assistance, please do not hesitate to contact our support team at <b>help@gstkanotice.com</b> or call us at <b>+91 7817010434</b>.</p>
+          
+          <p>Once again, thank you for your business, and we look forward to serving you in the future.</p>
+          
+          `,
+        };
+    
+      transporter.sendMail(paymentMailOptions);
 
       const caseNo = await generateUniqueNo('C')
       let data =  { user_id: req.user._id, 
@@ -367,23 +442,50 @@ exports.verifyPayment = async (req,res) => {
                     paid_amount:ticketDetails.asked_price,
                     created_by:req.user._id};
 
-      Cases.create(data).then((result)=>{
+      Cases.create(data).then(async(result)=>{
         if (result) {
-          res.status(200).json({
+
+          const caseCreatedMailOptions = {
+            from: process.env.INFO_EMAIL || "info@gstkanotice.com",
+            to: email,
+            subject: `Case Created Successfully - Case No: ${result.caseNo} for Ticket No: ${ticketDetails.ticketNo}`,
+            html: `<p>Dear <b>${fullName}</b>,</p>
+
+            <p>We trust this message finds you well. We would like to inform you that a case has been successfully created in response to your recent payment for the ticket number <b>${ticketDetails.ticketNo}</b>.</p>
+            
+            <p><b>Case Number:</b> ${result.caseNo}</p>
+            
+            <p>Our team is now reviewing the details of your case and will work diligently to provide you with a resolution. You can track the status and progress of your case at any time by logging into your account on our website and navigating to Cases under the Profile section.</p>
+            
+            <p>If you have any further inquiries or if there are specific details you would like to provide regarding your payment, please reply to this email with the case number  ${result.caseNo} in the subject line.</p>
+            
+            <p>We appreciate your cooperation and prompt attention to this matter. If you have additional questions or require assistance, please feel free to reach out to our support team at <b>help@gstkanotice.com</b> or call us at <b>+91 7817010434</b> . We are here to assist you.</p>
+            
+           <p> Thank you for choosing GST KA NOTICE. We value your trust and look forward to assisting you further.</p>
+            
+            `,
+          };
+      
+        transporter.sendMail(caseCreatedMailOptions);
+
+
+          return res.status(200).json({
             error:false,
             status: 200,
             message: "Case created successfully",
             data: result
           });
+
+
         } else {
-          res.status(400).json({
+          return res.status(400).json({
             error:true,
             status: 400,
             message: "Please provide correct information"
           });
         }
       }).catch((error)=>{
-        res.status(400).json({
+        return res.status(400).json({
           error:true,
           errorMessage:error.message,
           status: 400,
