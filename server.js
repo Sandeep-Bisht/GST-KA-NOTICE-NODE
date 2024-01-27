@@ -13,13 +13,13 @@ const passport = require('passport');
 app.use(cors({origin:true}));
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
-app.use('/public', express.static('public'));
+app.use('//public', express.static('public'));
 app.use(passport.initialize())
 
 const JwtStrategy = require('./middleware/passport-jwt.js')
 JwtStrategy(passport);
 
-app.use('/api',routes);
+app.use('//api',routes);
 
 app.listen(port , ()=>{
     console.log('Server running on port ' + port);
