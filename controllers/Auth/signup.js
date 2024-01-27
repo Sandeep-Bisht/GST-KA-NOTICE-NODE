@@ -34,7 +34,7 @@ exports.signup = async (req, res) => {
                 Cache.set(mobile, otp, 300);  //store otp for 300 seconds in catch
                 if(await Cache.get(mobile)){
                 
-                let template = signupMailTemplate({fullName,otp});
+                let template = signupMailTemplate({fullname,otp});
 
                 const mailOptions = {
                     from: process.env.INFO_EMAIL || "info@gstkanotice.com",
