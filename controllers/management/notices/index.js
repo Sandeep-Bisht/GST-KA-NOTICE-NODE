@@ -2,18 +2,33 @@ const Notices = require('../../../models/notices')
 
 exports.getAllNotices = async (req, res) => {
     try{
-        await Notices.find().populate('service').sort({ starting_price: 1 }).then((result)=>{
-          if(result && result.length>0)
-          {
-            res.status(200).json(result)
-          }
-          else{
-            res.status(400).json({
-              error:true,
-              message:"No Data found",
-            })
-          }
-        })
+      await Notices.find()
+      .populate('service')
+      .sort({ starting_price: 1 })
+      .then((result) => {
+        if (result && result.length > 0) {
+          // Convert starting_price to numbers
+          result.forEach((notice) => {
+            notice.starting_price = parseInt(notice.starting_price);
+          });
+    
+          // Sort the array based on starting_price
+          result.sort((a, b) => a.starting_price - b.starting_price);
+    
+          res.status(200).json(result);
+        } else {
+          res.status(400).json({
+            error: true,
+            message: "No Data found",
+          });
+        }
+      }).catch((error) => {
+        // Handle any errors that occurred during the database query
+        res.status(500).json({
+          error: true,
+          message: "Internal Server Error",
+        });
+      });
       }
       catch(error){
         res.status(500).json({

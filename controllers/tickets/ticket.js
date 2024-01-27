@@ -7,6 +7,7 @@ const crypto = require("crypto");
 const generateUniqueNo = require('../../services/generateUniqueNo')
 const transporter = require('../../config/nodeMailer');
 const profile = require('../../models/profile')
+const {signature} = require('../../email/common')
 
 exports.getAllTickets = async (req, res) => {
     try{
@@ -138,6 +139,7 @@ exports.askForPayment = async (req, res) => {
             </ul>
             <p>Please ensure that the payment is made by the specified due date. If you encounter any issues during the payment process or if you have any questions regarding the invoice, feel free to reach out to our support team at <b>help@gstkanotice.com</b> or call us at <b>+91 7817010434</b> . We are here to assist you.</p>
             <p>We appreciate your prompt attention to this matter. Thank you for choosing Us</p>
+            ${signature}
             `,
           };
         
@@ -428,7 +430,7 @@ exports.verifyPayment = async (req,res) => {
           <p>If you have any further questions or require additional assistance, please do not hesitate to contact our support team at <b>help@gstkanotice.com</b> or call us at <b>+91 7817010434</b>.</p>
           
           <p>Once again, thank you for your business, and we look forward to serving you in the future.</p>
-          
+          ${signature}
           `,
         };
     
@@ -462,7 +464,7 @@ exports.verifyPayment = async (req,res) => {
             <p>We appreciate your cooperation and prompt attention to this matter. If you have additional questions or require assistance, please feel free to reach out to our support team at <b>help@gstkanotice.com</b> or call us at <b>+91 7817010434</b> . We are here to assist you.</p>
             
            <p> Thank you for choosing GST KA NOTICE. We value your trust and look forward to assisting you further.</p>
-            
+           ${signature}
             `,
           };
       
