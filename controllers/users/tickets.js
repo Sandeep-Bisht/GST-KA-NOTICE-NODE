@@ -2,6 +2,7 @@ const generateUniqueNo = require('../../services/generateUniqueNo')
 const Tickets = require('../../models/tickets'); // Import your tickets model
 const profile = require('../../models/profile')
 const transporter = require('../../config/nodeMailer');
+const {signature} = require('../../email/common')
 
 exports.createTicket = async (req, res) => {
     try{
@@ -31,6 +32,7 @@ exports.createTicket = async (req, res) => {
                 <p>We appreciate your patience as we work to assist you promptly. If you have any urgent concerns or require immediate assistance, please don't hesitate to contact our support team at <b>help@gstkanotice.com</b> or call us at <b>+91 7817010434</b></p>
                 
                 <p>Thank you for choosing us for your needs.</p>
+                ${signature}
                 `,
               };
             
