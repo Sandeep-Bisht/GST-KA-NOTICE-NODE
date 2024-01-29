@@ -101,3 +101,54 @@ exports.getNoticeBySeoTitle = async (req, res) => {
       })
     }
 }
+
+exports.updateNotice = async (req, res) => {
+  let data = { ...req.body };
+        const noticeId = req.params._id; 
+        console.log("this sis data ", data)
+
+        if (req.files) {
+          try {
+            if (req.files.updatedFeaturedImage > 0) {
+              let featuredImage = req.files.updatedFeaturedImage.find((item) => item.fieldName == 'updatedFeaturedImage');
+              if (featuredImage){
+                console.log("insie featuredImage", featuredImage)
+                data = { ...data, featuredImage: featuredImage.response };
+              } 
+            }
+            if (req.files.updatedFeaturedIcon > 0) {
+              let featuredIcon = req.files.updatedFeaturedIcon.find((item) => item.fieldName == 'updatedFeaturedIcon');
+              if (featuredIcon){
+                data = { ...data, featuredIcon: featuredIcon.response };
+              } 
+            }
+          } catch (uploadError) {
+            return res.status(500).json({
+              error: true,
+              message: "Error uploading files.",
+            });
+          }
+        }
+        
+        try{
+          await Notices.findByIdAndUpdate(noticeId,data).then((result)=>{
+              if(result){
+                  res.status(200).json({
+                      error:false,
+                      message:"Notices updated Successfully"
+                  })
+              }else{
+                  res.status(400).json({
+                      error:true,
+                      message:"Error updating Notices"
+                  })
+              }
+            })
+        }catch(error){
+           res.status(500).json({
+              error:true,
+              message:"Something went wrong, please try again later."
+           })
+        }
+  
+}

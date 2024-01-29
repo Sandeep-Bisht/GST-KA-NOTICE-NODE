@@ -1,5 +1,7 @@
 const Blog = require('../../../models/blogs')
-const Category = require('../../../models/blogsCategories')
+const Category = require('../../../models/blogsCategories');
+const mongoose = require('mongoose');
+const { ObjectId } = mongoose.Types;
 
 module.exports = {
     create : async(req,res) => {
@@ -95,6 +97,81 @@ module.exports = {
         }
     },
 
+   update_Blog_by_id : async (req, res) => {
+      try {
+        let data = { ...req.body};
+        const blogId = req.params._id;        
+    
+        if (req.files) {
+          try {
+            if (req.files.updatedFeaturedImage > 0) {
+              let featuredImage = req.files.updatedFeaturedImage.find((item) => item.fieldName == 'updatedFeaturedImage');
+              if (featuredImage){
+                console.log("insie featuredImage", featuredImage)
+                data = { ...data, featuredImage: featuredImage.response };
+              } 
+            }     
+            try{
+              await Blog.findByIdAndUpdate(blogId,data).then((result)=>{
+                  if(result){
+                      res.status(200).json({
+                          error:false,
+                          message:"Blog updated Successfully"
+                      })
+                  }else{
+                      res.status(400).json({
+                          error:true,
+                          message:"Error updating Blog"
+                      })
+                  }
+                })
+            }catch(error){
+               res.status(500).json({
+                  error:true,
+                  message:"Something went wrong, please try again later."
+               })
+            }       
+          } catch (uploadError) {
+            return res.status(500).json({
+              error: true,
+              message: "Error uploading files.",
+            });
+          }
+        }
+      } catch (err) {
+        res.status(500).json({
+          error: true,
+          message: "Something went wrong please try again later.",
+        });
+      }
+    },
+
+    delete_Blog_by_id : async (req, res) => {
+      try {
+        const blogId = req.params._id;
+    
+        const deletedBlog = await Blog.findOneAndDelete({ _id: blogId });    
+        if (!deletedBlog) {
+          return res.status(404).json({
+            error: true,
+            message: 'Blog not found.',
+          });
+        }
+    
+        return res.status(200).json({
+          error: false,
+          message: 'Blog deleted successfully!',
+        });
+    
+      } catch (error) {
+        console.error("Error deleting blog:", error);
+        res.status(500).json({
+          error: true,
+          message: 'Error deleting blog.',
+        });
+      }
+    },
+
 
     create_categorie : async(req, res) => {
         try {
@@ -182,3 +259,4 @@ module.exports = {
      },
   
 }
+
