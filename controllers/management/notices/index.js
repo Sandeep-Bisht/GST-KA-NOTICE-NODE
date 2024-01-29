@@ -40,7 +40,20 @@ exports.getAllNotices = async (req, res) => {
 
 exports.createNotice = async (req, res) => {
     try {
-        let data = { ...req.body,created_by:req.user._id,featuredImage: req.files.featuredImage[0], featuredIcon: req.files.featuredIcon[0]};
+        let data = { ...req.body,created_by:req.user._id};
+
+        if(req.files){
+          if(req.files.featuredImage){
+            data = {...data,featuredImage: req.files.featuredImage[0]}
+          }
+
+          if(req.files.featuredIcon){
+            data = {...data,featuredIcon: req.files.featuredImage[0]}
+          }
+
+        }
+
+        data['seo_url'] = data.seo_url.replace(/ /g, '-');
 
         if((data.tags || !Array.isArray(data.tags ) && data.tags !== '')){
           data.tags = data.tags.split(',');
@@ -104,6 +117,8 @@ exports.getNoticeBySeoTitle = async (req, res) => {
 
 exports.updateNotice = async (req, res) => {
   let data = { ...req.body };
+  delete data.featuredImage;
+  delete data.featuredIcon;
         const noticeId = req.params._id; 
         if (req.files) {
           try {
@@ -126,6 +141,15 @@ exports.updateNotice = async (req, res) => {
             });
           }
         }
+
+        if((data.tags || !Array.isArray(data.tags ) && data.tags !== '')){
+          data.tags = data.tags.split(',');
+        }
+        else{
+          data.tags = []
+        }
+
+        data['seo_url'] = data.seo_url.replace(/ /g, '-');
         
         try{
           await Notices.findByIdAndUpdate(noticeId,data).then((result)=>{

@@ -103,7 +103,7 @@ module.exports = {
         const blogId = req.params._id;        
     
         if (req.files) {
-          console.log("check files", req.files)
+          
           try {
             if (req.files && req.files.length > 0) {
               let images = [...req.files]
