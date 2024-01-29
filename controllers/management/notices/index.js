@@ -40,7 +40,21 @@ exports.getAllNotices = async (req, res) => {
 
 exports.createNotice = async (req, res) => {
     try {
-        let data = { ...req.body,created_by:req.user._id,featuredImage: req.files.featuredImage[0], featuredIcon: req.files.featuredIcon[0]};
+        let data = { ...req.body,created_by:req.user._id};
+
+        if(req.files){
+          if(req.files.featuredImage){
+            data = {...data,featuredImage: req.files.featuredImage[0]}
+          }
+
+          if(req.files.featuredIcon){
+            data = {...data,featuredIcon: req.files.featuredIcon[0]}
+          }
+
+        }
+        
+
+        data['seo_url'] = data.seo_url.replace(/ /g, '-');
 
         if((data.tags || !Array.isArray(data.tags ) && data.tags !== '')){
           data.tags = data.tags.split(',');
@@ -100,4 +114,63 @@ exports.getNoticeBySeoTitle = async (req, res) => {
         message:"please provide correct information"
       })
     }
+}
+
+exports.updateNotice = async (req, res) => {
+  let data = { ...req.body };
+  delete data.featuredImage;
+  delete data.featuredIcon;
+        const noticeId = req.params._id; 
+        if (req.files) {
+          try {
+            if (req.files.updatedFeaturedImage > 0) {
+              let featuredImage = req.files.updatedFeaturedImage.find((item) => item.fieldName == 'updatedFeaturedImage');
+              if (featuredImage){
+                data = { ...data, featuredImage: featuredImage.response };
+              } 
+            }
+            if (req.files.updatedFeaturedIcon > 0) {
+              let featuredIcon = req.files.updatedFeaturedIcon.find((item) => item.fieldName == 'updatedFeaturedIcon');
+              if (featuredIcon){
+                data = { ...data, featuredIcon: featuredIcon.response };
+              } 
+            }
+          } catch (uploadError) {
+            return res.status(500).json({
+              error: true,
+              message: "Error uploading files.",
+            });
+          }
+        }
+
+        if((data.tags || !Array.isArray(data.tags ) && data.tags !== '')){
+          data.tags = data.tags.split(',');
+        }
+        else{
+          data.tags = []
+        }
+
+        data['seo_url'] = data.seo_url.replace(/ /g, '-');
+        
+        try{
+          await Notices.findByIdAndUpdate(noticeId,data).then((result)=>{
+              if(result){
+                  res.status(200).json({
+                      error:false,
+                      message:"Notices updated Successfully"
+                  })
+              }else{
+                  res.status(400).json({
+                      error:true,
+                      message:"Error updating Notices"
+                  })
+              }
+            })
+        }catch(error){
+           res.status(500).json({
+              error:true,
+              message:"Something went wrong, please try again later."
+           })
+        }
+  
 }

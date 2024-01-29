@@ -23,6 +23,7 @@ const NoticesSchema = new Schema({
     description: String,
     tags: JSON,
     seo_title:String,
+    seo_url:String,
     status:{
         type : String,
         required : true,

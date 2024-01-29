@@ -11,5 +11,7 @@ router.post('/get_blog_by_id',blogs.get_blog_by_id)
 router.post('/create-blog-category', passport.authenticate('jwt',{session:false}),upload.any('files'),blogs.create_categorie);
 router.get('/get_all_blog_categories', blogs.get_all_blog_categories);
 router.get('/get_category_by_id/:category_id',blogs.getBlogCategoryById)
+router.post('/update_blog_by_id/:_id',passport.authenticate('jwt',{session:false}),upload.any('files'), blogs.update_Blog_by_id) 
+router.delete('/delete_blog_by_id/:_id', passport.authenticate('jwt',{session:false}),upload.any('files'), blogs.delete_Blog_by_id);
 module.exports = router
  
