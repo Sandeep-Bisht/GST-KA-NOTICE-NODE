@@ -95,7 +95,7 @@ exports.createNotice = async (req, res) => {
 exports.getNoticeBySeoTitle = async (req, res) => {  
   try{
     let {seo_title} = {...req.params};
-      await Notices.findOne({seo_title}).populate('service').then((result)=>{
+      await Notices.findOne({'seo_url':seo_title}).populate('service').then((result)=>{
         if(result)
         {
           res.status(200).json(result)
