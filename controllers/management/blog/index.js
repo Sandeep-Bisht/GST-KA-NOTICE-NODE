@@ -256,6 +256,33 @@ module.exports = {
           })
         }
      },
+
+     get_blog_by_slug : async(req,res) => {
+      const {slug} = req.params;
+      try{
+         await Blog.findOne({slug}).populate("category").then((result)=>{
+            if(result!==null)
+            {
+              res.status(200).json({
+                  error:false,
+                  message:"Data Found",
+                  data:result
+              })
+            }else{
+              res.status(400).json({
+                  error:true,
+                  message:"Data not found"
+              })
+            }
+         })
+      }catch(error){
+          res.status(500).json({
+              error:true,
+              message:"Something went wrong, please try again later."
+          })
+      }
+  },
+     
   
 }
 
