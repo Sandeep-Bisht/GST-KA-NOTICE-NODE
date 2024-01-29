@@ -1,7 +1,6 @@
 const Blog = require('../../../models/blogs')
 const Category = require('../../../models/blogsCategories');
 const mongoose = require('mongoose');
-const { ObjectId } = mongoose.Types;
 
 module.exports = {
     create : async(req,res) => {

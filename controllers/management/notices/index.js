@@ -48,10 +48,11 @@ exports.createNotice = async (req, res) => {
           }
 
           if(req.files.featuredIcon){
-            data = {...data,featuredIcon: req.files.featuredImage[0]}
+            data = {...data,featuredIcon: req.files.featuredIcon[0]}
           }
 
         }
+        
 
         data['seo_url'] = data.seo_url.replace(/ /g, '-');
 
