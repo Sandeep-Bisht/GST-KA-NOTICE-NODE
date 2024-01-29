@@ -103,12 +103,13 @@ module.exports = {
         const blogId = req.params._id;        
     
         if (req.files) {
+          console.log("check files", req.files)
           try {
-            if (req.files.updatedFeaturedImage > 0) {
-              let featuredImage = req.files.updatedFeaturedImage.find((item) => item.fieldName == 'updatedFeaturedImage');
+            if (req.files && req.files.length > 0) {
+              let images = [...req.files]
+              let featuredImage = images.find((item) => item.fieldname == 'updatedFeaturedImage');
               if (featuredImage){
-                console.log("insie featuredImage", featuredImage)
-                data = { ...data, featuredImage: featuredImage.response };
+                data = { ...data, featuredImage: [featuredImage] };
               } 
             }     
             try{
