@@ -105,14 +105,11 @@ exports.getNoticeBySeoTitle = async (req, res) => {
 exports.updateNotice = async (req, res) => {
   let data = { ...req.body };
         const noticeId = req.params._id; 
-        console.log("this sis data ", data)
-
         if (req.files) {
           try {
             if (req.files.updatedFeaturedImage > 0) {
               let featuredImage = req.files.updatedFeaturedImage.find((item) => item.fieldName == 'updatedFeaturedImage');
               if (featuredImage){
-                console.log("insie featuredImage", featuredImage)
                 data = { ...data, featuredImage: featuredImage.response };
               } 
             }
