@@ -6,7 +6,7 @@ const passport = require("passport")
 
 router.get('/get-all-notices',getAllNotices)
 router.post('/create-notice',passport.authenticate('jwt', {session:false}), upload.fields([{name: 'featuredImage'}, {name : 'featuredIcon'}]),createNotice)
-router.get('/get-notice-by-seo-title/:seo_title', getNoticeBySeoTitle);
+router.get('/get-notice-by-seo-title/:seo_title', passport.authenticate('jwt', {session:false}),  getNoticeBySeoTitle);
 router.post('/update-notice/:_id',passport.authenticate('jwt', {session:false}), upload.fields([{name: 'updatedFeaturedImage'}, {name : 'updatedFeaturedIcon'}]),  updateNotice)
 module.exports = router
 
