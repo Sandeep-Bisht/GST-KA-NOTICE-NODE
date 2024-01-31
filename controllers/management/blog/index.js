@@ -282,7 +282,54 @@ module.exports = {
           })
       }
   },
-     
-  
+
+  updateCategoryById : async (req, res) => {
+    try {
+      let data = { ...req.body};
+      const categoryId = req.params._id;
+      delete data.featuredIcon;        
+      if (req.files) {        
+        try {
+          if (req.files && req.files.length > 0) {
+            let images = [...req.files]
+            let featuredImage = images.find((item) => item.fieldname == 'updatedFeaturedImage');
+            if (featuredImage){
+              data = { ...data, featuredImage: [featuredImage] };
+            } 
+          }     
+          try{
+            await Category.findByIdAndUpdate(categoryId,data).then((result)=>{
+                if(result){
+                    res.status(200).json({
+                        error:false,
+                        message:"Category updated Successfully"
+                    })
+                }else{
+                    res.status(400).json({
+                        error:true,
+                        message:"Error updating Category"
+                    })
+                }
+              })
+          }catch(error){
+             res.status(500).json({
+                error:true,
+                message:"Something went wrong, please try again later."
+             })
+          }       
+        } catch (uploadError) {
+          return res.status(500).json({
+            error: true,
+            message: "Error uploading files.",
+          });
+        }
+      }
+    } catch (err) {
+      res.status(500).json({
+        error: true,
+        message: "Something went wrong please try again later.",
+      });
+    }
+  }
 }
 

@@ -1,5 +1,6 @@
 const Profile = require("../../models/profile");
-const UserRoles =require('../../models/user_roles')
+const UserRoles =require('../../models/user_roles');
+const Users = require('../../models/users')
 
 exports.setProfile = async (req, res) => {
     try{
@@ -82,3 +83,20 @@ const updateProfile = async (data) => {
       };
     }
   };
+
+  exports.getAllUsers = async (req, res) => {
+    try {
+      let users = await UserRoles.find({role_id:process.env.ROLE_USER});
+      let usersId = users.map((item) => item.user_id);
+      let profiles = await Profile.find({ user_id: { $in: usersId } });    // we have passed the usersId array in query which will search the array   
+      return res.status(200).json({
+                error : false,
+                data : profiles
+              })
+    } catch (error) {
+      res.status(500).json({
+        error : true,
+        message : "Something went wrong please try again."
+      })
+    }
+  }
