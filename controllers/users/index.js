@@ -1,4 +1,3 @@
-const { response } = require("express");
 const Profile = require("../../models/profile");
 const UserRoles =require('../../models/user_roles');
 const Users = require('../../models/users')
