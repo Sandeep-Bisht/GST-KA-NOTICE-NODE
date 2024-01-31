@@ -1,9 +1,9 @@
 const router = require("express").Router()
 const passport = require("passport")
-const {createPayment, verify} = require('./payment')
+const {getAllPayments} = require('./payment')
 
-router.post('/orders' , createPayment)
-router.post('/verify' , verify)
+
+router.get("/get-all-payments",passport.authenticate('jwt', {session:false}), getAllPayments)
 
 
 module.exports = router
