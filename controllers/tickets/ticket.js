@@ -58,10 +58,16 @@ exports.getByTicketNo = async (req, res) => {
     }
 
     if (roleId.role_id == process.env.ROLE_ADMIN) {
-      let ticketDetails = await Tickets.findOne({ ticketNo }).populate(
-        "notice"
-      );
-      return res.status(200).json(ticketDetails);
+      let ticketDetails = await Tickets.findOne({ ticketNo }).populate("notice");
+      const userData = await profile.findOne({ user_id: ticketDetails.user_id });
+      if(userData){
+        let user = userData;
+        ticketDetails = ticketDetails.toObject();
+         ticketDetails.user_data = user;
+        return res.status(200).json(ticketDetails);
+      }
+     
+     
     }
 
     if (roleId.role_id == process.env.ROLE_USER) {
