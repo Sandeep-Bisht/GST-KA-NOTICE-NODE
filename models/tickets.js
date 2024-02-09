@@ -32,7 +32,7 @@ const ticketSchema = new Schema({
     status:{
         type : String,
         required : true,
-        default:'progress',
+        default:'in progress',
     },
     created_by:{
         required:true,
