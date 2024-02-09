@@ -26,7 +26,7 @@ exports.getAllTickets = async (req, res) => {
     }
 
     if(roleId.role_id == process.env.ROLE_USER){
-        let allTickets = await Tickets.find({user_id:req.user._id,status:{ $ne: 'Paid' }}).populate('notice');
+        let allTickets = await Tickets.find({user_id:req.user._id,status:{ $ne: 'paid' }}).populate('notice');
         return res.status(200).json(allTickets);
     }
 
@@ -90,41 +90,236 @@ exports.getByTicketNo = async (req, res) => {
   }
 };
 
-exports.askForPayment = async (req, res) => {
-  try {
+exports.requestDocuments = async (req, res) => {
+  try{
     const { ticketNo } = { ...req.params };
-    var { asked_price, documentRequested } = { ...req.body };
+    var { documentRequested } = { ...req.body };
+    const currentlyRequestedDocuments = documentRequested;
 
-    if (
-      !(
-        documentRequested &&
-        Array.isArray(documentRequested) &&
-        documentRequested.length > 0
-      )
-    ) {
-      documentRequested = [];
+    if (!(documentRequested && Array.isArray(documentRequested) && documentRequested.length > 0 )) {
+      return res.status(400).json({
+        error: true,
+        message: "please provide correct information",
+      });
     }
 
-    const roleId = await UserRole.findOne({ user_id: req.user._id }).select(
-      "role_id"
-    );
-
-    if (!roleId || !roleId.role_id) {
+    const roleId = await UserRole.findOne({ user_id: req.user._id }).select("role_id");
+    
+    if (!roleId || !roleId.role_id || !roleId.role_id.equals(process.env.ROLE_ADMIN)) {
       return res.status(401).json({
         error: true,
         message: "Unautherized user role.",
       });
     }
 
-    if (roleId.role_id == process.env.ROLE_ADMIN) {
-      const updateFields = {
+    const ticketDetails = await Tickets.findOne({ticketNo});
+
+    if(!ticketDetails){
+      return res.status(400).json({
+        error: true,
+        message: "please provide correct information",
+      });
+    }
+
+    if(!(ticketDetails.status == 'in progress' || ticketDetails.status == 'document uploaded')){
+      return res.status(400).json({
+        error: true,
+        message: "Invalid Request",
+      });
+    }
+
+    let previousDocumentRequested = ticketDetails.documentRequested ? ticketDetails.documentRequested : [];
+
+    const updateFields = {
+      documentRequested:[...documentRequested, ...previousDocumentRequested],
+      status: "document requested",
+    };
+
+    const updatedTicketDetails = await Tickets.findOneAndUpdate(
+      { ticketNo },
+      { $set: updateFields },
+      { new: true }
+    );
+
+
+    const userProfile = await profile.findOne({
+      user_id: updatedTicketDetails.user_id,
+    });
+
+    let fullName = userProfile.fullName;
+    let email = userProfile.email;
+    let dateOption = { day: "2-digit", month: "short", year: "numeric" };
+    let date = new Intl.DateTimeFormat("en-US", dateOption).format(
+      new Date()
+    );
+
+    const mailOptions = {
+      from: process.env.INFO_EMAIL || "info@gstkanotice.com",
+      to: email,
+      subject: `Document Requested for Ticket No: ${ticketNo}`,
+      html: `<p>Dear <b>${fullName}</b>,</p>
+
+          <p>We trust this message finds you well. We would like to inform you that your recent request, identified by the ticket number <b>${ticketNo}</b>, has been processed, and we are now ready to proceed with the necessary documents.</p>
+          
+          <p><b>Document requested:</b> </p>
+          <ul>
+          ${currentlyRequestedDocuments.map((item)=>{
+          return(`<li>${item.title}</li>`)
+          }).join('')}
+          </ul>
+          <p>Due Date: ${date} (3 Days from the Notice updated/ document requested dated)</p>
+          
+          <p>To facilitate the documents upload, please log in to your account on our portal and follow these steps:</p>
+          <ul>
+            <li><b>Log in to Your Account:</b> Visit [Portal URL] and log in using your credentials.</li>
+            <li><b>Navigate to Tickets Section:</b> Once logged in, navigate to the “Ticket"</li>
+            <li><b>Select Your Ticket:</b> Locate the invoice corresponding to the ticket number <b>${ticketNo}</b> and click on it for detailed information.</li>
+            <li><b>Upload Documents:</b> Use the "Upload" option to complete the document upload process securely.</li>
+          </ul>
+          <p>Please ensure that the document upload is made by the specified due date. If you encounter any issues during the document upload or if you have any questions regarding the invoice, feel free to reach out to our support team at <b>help@gstkanotice.com</b> or call us at <b>+91 7817010434</b> . We are here to assist you.</p>
+          <p>We appreciate your prompt attention to this matter. Thank you for choosing Us</p>
+          ${signature}
+          `,
+    };
+
+    transporter.sendMail(mailOptions);
+
+    return res.status(200).json(updatedTicketDetails);
+
+  }
+  catch(error){
+    return res.status(500).json({
+      error: true,
+      message: "please provide correct information",
+    });
+  }
+}
+
+exports.uploadRequestedDocuments = async (req, res) =>{
+  try{
+    const { ticketNo } = { ...req.params };
+    const documents = req.files;
+
+    if (!ticketNo || !documents || !documents.length > 0) {
+      return res.status(400).json({
+        error: true,
+        message: "please provide correct information",
+      });
+    }
+
+    const roleId = await UserRole.findOne({ user_id: req.user._id }).select(
+      "role_id"
+    );
+
+    if (!roleId || !roleId.role_id || !roleId.role_id.equals(process.env.ROLE_USER)) {
+      return res.status(401).json({
+        error: true,
+        message: "Unautherized user role.",
+      });
+    }
+
+    var ticketData = await Tickets.findOne({
+      user_id: req.user._id,
+      ticketNo,
+      status: "document requested",
+    });
+
+    if(!ticketData){
+      return res.status(400).json({
+        error: true,
+        message: "please provide correct information",
+      });
+    }
+
+    var requestedDocuments = ticketData?.documentRequested;
+    
+    if(!(requestedDocuments && Array.isArray(requestedDocuments) && requestedDocuments.length > 0)){
+      return res.status(400).json({
+        error: true,
+        message: "please provide correct information",
+      });
+    }
+
+    let promises = documents.map((item) =>{
+      let index = parseInt(item.fieldname.split('documentRequested_')[1]);
+      if(requestedDocuments[index] && requestedDocuments[index]?.type == 'document requested' && (!requestedDocuments[index]?.document || !requestedDocuments[index]?.document?.path)){
+        requestedDocuments[index]['document'] = item;
+      }
+    })
+
+    Promise.all(promises);
+
+    const ticketDetails = await Tickets.findOneAndUpdate(
+      {
+        user_id: req.user._id,
+        ticketNo,
+        status: "document requested",
+      },
+      { $set: { documentRequested: requestedDocuments, status : 'document uploaded' } },
+      { new: true }
+    ).populate("notice");
+
+    return res.status(200).json(ticketDetails);
+  }
+  catch(error){
+    return res.status(500).json({
+      error: true,
+      message: "Something went wrong.",
+    });
+  }
+}
+
+exports.askForPayment = async (req, res) => {
+  try {
+    const { ticketNo } = { ...req.params };
+    var { asked_price, documentRequested } = { ...req.body };
+
+    if (!ticketNo || !asked_price) {
+      return res.status(400).json({
+        error: true,
+        message: "please provide correct information",
+      });
+    }
+
+
+    const roleId = await UserRole.findOne({ user_id: req.user._id }).select(
+      "role_id"
+    );
+
+    if (!roleId || !roleId.role_id || !roleId.role_id.equals(process.env.ROLE_ADMIN)) {
+      return res.status(401).json({
+        error: true,
+        message: "Unautherized user role.",
+      });
+    }
+
+    const ticketData = await Tickets.findOne({ ticketNo });
+
+    if(!ticketData || !(ticketData?.status == 'in progress' || ticketData?.status == 'document uploaded')){
+      return res.status(400).json({
+        error: true,
+        message: "please provide correct information",
+      });
+    }
+
+    if (!( documentRequested && Array.isArray(documentRequested) && documentRequested.length > 0 )){
+      documentRequested = [];
+    }
+
+    let previousDocumentRequested = ticketData.documentRequested ? ticketData.documentRequested : [];
+
+    documentRequested = documentRequested.map((item) => {item['type'] = 'payment requested'; return item;})
+
+    documentRequested = [...previousDocumentRequested, ...documentRequested];
+
+    const updateFields = {
         asked_price,
         documentRequested,
-        status: "Payment Pending",
-      };
+        status: "payment requested",
+    };
 
       const ticketDetails = await Tickets.findOneAndUpdate(
-        { ticketNo, status: "progress" },
+        { ticketNo },
         { $set: updateFields },
         { new: true }
       );
@@ -169,13 +364,8 @@ exports.askForPayment = async (req, res) => {
 
       transporter.sendMail(mailOptions);
 
-      return res.status(200).json(ticketDetails);
-    }
+    return res.status(200).json(ticketDetails);
 
-    return res.status(401).json({
-      error: true,
-      message: "Unautherized role.",
-    });
   } catch (error) {
     res.status(500).json({
       error: true,
@@ -190,7 +380,7 @@ exports.uploadAskedDocs = async (req, res) => {
     let { title } = { ...req.body };
 
     if (!ticketNo || !title) {
-      res.status(400).json({
+      return res.status(400).json({
         error: true,
         message: "please provide correct information",
       });
@@ -200,21 +390,28 @@ exports.uploadAskedDocs = async (req, res) => {
       "role_id"
     );
 
-    if (!roleId || !roleId.role_id) {
+    if (!roleId || !roleId.role_id || !roleId.role_id.equals(process.env.ROLE_USER)) {
       return res.status(401).json({
         error: true,
         message: "Unautherized user role.",
       });
     }
 
-    if (roleId.role_id == process.env.ROLE_USER) {
-      if (title == "otherDocuments") {
-        let ticketData = await Tickets.findOne({
-          user_id: req.user._id,
-          ticketNo,
-          status: "Payment Pending",
-        });
-        let otherDocuments = ticketData?.otherDocuments;
+    var ticketData = await Tickets.findOne({
+      user_id: req.user._id,
+      ticketNo,
+      status: "payment requested",
+    });
+
+    if(!ticketData){
+      return res.status(400).json({
+        error: true,
+        message: "please provide correct information",
+      });
+    }
+
+    if (title == "otherDocuments") {
+      let otherDocuments = ticketData?.otherDocuments;
 
         if (otherDocuments && Array.isArray(otherDocuments)) {
           otherDocuments = [...ticketData?.otherDocuments, ...req.files];
@@ -223,27 +420,24 @@ exports.uploadAskedDocs = async (req, res) => {
         }
 
         let ticketNewDetails = await Tickets.findOneAndUpdate(
-          { user_id: req.user._id, ticketNo, status: "Payment Pending" },
+          { user_id: req.user._id, ticketNo, status: "payment requested" },
           { $set: { otherDocuments: otherDocuments } },
           { new: true }
         ).populate("notice");
 
         return res.status(200).json(ticketNewDetails);
-      }
+    }
 
-      let ticketData = await Tickets.findOne({
-        user_id: req.user._id,
-        ticketNo,
-        status: "Payment Pending",
-      });
       let documentRequested = ticketData?.documentRequested;
 
       if (documentRequested && Array.isArray(documentRequested)) {
+        
         documentRequested = [...ticketData?.documentRequested];
 
         let currentDocumentIndex = documentRequested.findIndex(
           (el) => el.title == title
         );
+
         if (currentDocumentIndex > -1) {
           let updatedDocument = {
             ...documentRequested[currentDocumentIndex],
@@ -252,7 +446,7 @@ exports.uploadAskedDocs = async (req, res) => {
           documentRequested[currentDocumentIndex] = updatedDocument;
 
           const ticketDetails = await Tickets.findOneAndUpdate(
-            { user_id: req.user._id, ticketNo, status: "Payment Pending" },
+            { user_id: req.user._id, ticketNo, status: "payment requested" },
             { $set: { documentRequested: documentRequested } },
             { new: true }
           ).populate("notice");
@@ -270,12 +464,7 @@ exports.uploadAskedDocs = async (req, res) => {
           message: "please provide correct information",
         });
       }
-    } else {
-      return res.status(401).json({
-        error: true,
-        message: "Unautherized role.",
-      });
-    }
+
   } catch (error) {
     return res.status(500).json({
       error: true,
@@ -447,7 +636,7 @@ exports.verifyPayment = async (req, res) => {
 
       let ticketDetails = await Tickets.findByIdAndUpdate(
         payment.reference_id,
-        { $set: { status: "Paid" } },
+        { $set: { status: "paid" } },
         { new: true }
       ).populate("notice");
 
@@ -605,7 +794,7 @@ exports.removeOtherDocuments = async (req, res) => {
     if (roleId.role_id == process.env.ROLE_USER) {
       if (Array.isArray(otherDocuments)) {
         let ticketNewDetails = await Tickets.findOneAndUpdate(
-          { user_id: req.user._id, ticketNo, status: "Payment Pending" },
+          { user_id: req.user._id, ticketNo, status: "payment requested"},
           { $set: { otherDocuments: otherDocuments } },
           { new: true }
         ).populate("notice");
