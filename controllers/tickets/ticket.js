@@ -833,7 +833,7 @@ exports.getAllTicketsForDashboard = async (req, res) => {
       });
     }
 
-    let allTickets = await Tickets.find({ status: 'progress' })  
+    let allTickets = await Tickets.find()  
     .sort({ createdAt: -1 })  // Sort in descending order of createdAt (latest first)
     .limit(5);
     const uniqueUserIds = Array.from(
