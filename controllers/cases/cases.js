@@ -22,7 +22,7 @@ exports.getAllCases = async (req, res) => {
               populate: {
                   path: 'notice'
               }
-          });
+          }).sort({ createdAt: -1 });
             return res.status(200).json(allCases);
         }
 
@@ -138,8 +138,16 @@ exports.replyDocument = async (req, res) =>{
           subject: `Submission of Reply and Response for Case No: ${caseData.caseNo}`,
           html: template,
         };
+
+        const sendEmailToAdmin = {
+          from: process.env.INFO_EMAIL || "info@gstkanotice.com",
+          to: process.env.INFO_EMAIL || "info@gstkanotice.com",
+          subject: `Submission of Reply and Response for Case No: ${caseData.caseNo}`,
+          html: template,
+        };
       
       transporter.sendMail(mailOptions);
+      transporter.sendMail(sendEmailToAdmin);
 
 
         return res.status(200).json(caseData);

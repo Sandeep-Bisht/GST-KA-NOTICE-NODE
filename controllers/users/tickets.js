@@ -35,8 +35,29 @@ exports.createTicket = async (req, res) => {
                 ${signature}
                 `,
               };
+
+              const sendEmailToAdmin = {
+                from: process.env.INFO_EMAIL || "info@gstkanotice.com",
+                to: process.env.INFO_EMAIL || "info@gstkanotice.com",
+                subject: `Ticket Created Successfully - User Ticket Number: ${result.ticketNo}`,
+                html: `<p>Dear <b>Admin</b>,</p>
+                <p>We hope this message finds you well. We would like to inform you that your request has been successfully received, and a ticket has been created to address your inquiry.</p>
+                
+                <p>${fullName} has raised a ticket with Ticket Number: <b>${result.ticketNo}</b><p>
+                
+                <p>Our support team is now reviewing your request, and we will strive to provide a timely and satisfactory resolution for your uploaded Notice. You can track the status and progress of your ticket at any time by logging into your account on our website.</p>
+                
+                <p>If you have any additional information or updates regarding your request, please reply to this email, ensuring the ticket number is included in the subject line.</p>
+                
+                <p>We appreciate your patience as we work to assist you promptly. If you have any urgent concerns or require immediate assistance, please don't hesitate to contact our support team at <b>help@gstkanotice.com</b> or call us at <b>+91 7817010434</b></p>
+                
+                <p>Thank you for choosing us for your needs.</p>
+                ${signature}
+                `,
+              };
             
             transporter.sendMail(mailOptions);
+            transporter.sendMail(sendEmailToAdmin);
 
             res.status(200).json({
               error:false,
