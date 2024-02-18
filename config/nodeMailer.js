@@ -9,4 +9,7 @@ module.exports = nodemailer.createTransport({
     user: process.env.INFO_EMAIL || "info@gstkanotice.com",
     pass: process.env.EMAIL_APP_PASS || "UPDATE ENV APP CODE",
   },
+  tls: {
+    rejectUnauthorized: false
+  }
  });

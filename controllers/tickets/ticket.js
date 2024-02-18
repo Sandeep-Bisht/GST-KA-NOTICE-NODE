@@ -21,7 +21,7 @@ exports.getAllTickets = async (req, res) => {
     }
 
     if(roleId.role_id == process.env.ROLE_ADMIN){
-        let allTickets = await Tickets.find().populate('notice');
+        let allTickets = await Tickets.find().populate('notice').sort({ createdAt: -1 });
         return res.status(200).json(allTickets);
     }
 
@@ -159,30 +159,39 @@ exports.requestDocuments = async (req, res) => {
       subject: `Document Requested for Ticket No: ${ticketNo}`,
       html: `<p>Dear <b>${fullName}</b>,</p>
 
-          <p>We trust this message finds you well. We would like to inform you that your recent request, identified by the ticket number <b>${ticketNo}</b>, has been processed, and we are now ready to proceed with the necessary documents.</p>
+          <p>Thanks for registering on our platform GSTKA NOTICE, we are privileged to serve you.</p>
           
-          <p><b>Document requested:</b> </p>
+          <p>To provide the Consultation and required estimate can you please provide the following document.         
           <ul>
           ${currentlyRequestedDocuments.map((item)=>{
           return(`<li>${item.title}</li>`)
           }).join('')}
           </ul>
-          <p>Due Date: ${date} (3 Days from the Notice updated/ document requested dated)</p>
           
-          <p>To facilitate the documents upload, please log in to your account on our portal and follow these steps:</p>
-          <ul>
-            <li><b>Log in to Your Account:</b> Visit [Portal URL] and log in using your credentials.</li>
-            <li><b>Navigate to Tickets Section:</b> Once logged in, navigate to the “Ticket"</li>
-            <li><b>Select Your Ticket:</b> Locate the invoice corresponding to the ticket number <b>${ticketNo}</b> and click on it for detailed information.</li>
-            <li><b>Upload Documents:</b> Use the "Upload" option to complete the document upload process securely.</li>
-          </ul>
-          <p>Please ensure that the document upload is made by the specified due date. If you encounter any issues during the document upload or if you have any questions regarding the invoice, feel free to reach out to our support team at <b>help@gstkanotice.com</b> or call us at <b>+91 7817010434</b> . We are here to assist you.</p>
-          <p>We appreciate your prompt attention to this matter. Thank you for choosing Us</p>
+          <p>For your convenience, you can attach the document in reply to this mail. We will get back to you as soon as possible.</p>
+          ${signature}
+          `,
+    };
+
+    const sendEmailToAdmin = {
+      from: process.env.INFO_EMAIL || "info@gstkanotice.com",
+      to: process.env.INFO_EMAIL || "info@gstkanotice.com",
+      subject: `Document Requested for Ticket No: ${ticketNo}`,
+      html: `<p>Dear <b>Admin</b>,</p>
+      <p>An email has been sent to user to provide the following documents.</p>          
+      <ul>
+      ${currentlyRequestedDocuments.map((item)=>{
+      return(`<li>${item.title}</li>`)
+      }).join('')}
+      </ul>
+      <p>For your convenience, you can attach the document in reply to this mail. We will get back to you as soon as possible.</p>
+
           ${signature}
           `,
     };
 
     transporter.sendMail(mailOptions);
+    transporter.sendMail(sendEmailToAdmin)
 
     return res.status(200).json(updatedTicketDetails);
 
@@ -210,6 +219,11 @@ exports.uploadRequestedDocuments = async (req, res) =>{
     const roleId = await UserRole.findOne({ user_id: req.user._id }).select(
       "role_id"
     );
+    const userProfile = await profile.findOne({
+      user_id: req.user._id,
+    });
+
+    
 
     if (!roleId || !roleId.role_id || !roleId.role_id.equals(process.env.ROLE_USER)) {
       return res.status(401).json({
@@ -249,6 +263,34 @@ exports.uploadRequestedDocuments = async (req, res) =>{
 
     Promise.all(promises);
 
+    const mailOptions = {
+      from: process.env.INFO_EMAIL || "info@gstkanotice.com",
+      to: userProfile.email,
+      subject: `Document Requested for Ticket No: ${ticketNo}`,
+      html: `<p>Dear <b>${userProfile.fullName}</b>,</p>
+
+          <p>Thanks for registering on our platform GSTKA NOTICE, we are privileged to serve you.</p>
+          
+          <p>We have recived your requested documents, will update you soon on your status.      
+         
+          
+          ${signature}
+          `,
+    };
+
+    const sendEmailToAdmin = {
+      from: process.env.INFO_EMAIL || "info@gstkanotice.com",
+      to: process.env.INFO_EMAIL || "info@gstkanotice.com",
+      subject: `Submit Requested Document for Ticket No: ${ticketNo}`,
+      html: `<p>Dear <b>Admin</b>,</p>
+      <p><b>${userProfile.fullName}</b> has submitted the requested documents.</p>          
+      
+      <p>You can update the user by accepting or rejecting the document.</p>
+
+          ${signature}
+          `,
+    };
+
     const ticketDetails = await Tickets.findOneAndUpdate(
       {
         user_id: req.user._id,
@@ -259,6 +301,8 @@ exports.uploadRequestedDocuments = async (req, res) =>{
       { new: true }
     ).populate("notice");
 
+    transporter.sendMail(mailOptions);
+    transporter.sendMail(sendEmailToAdmin)
     return res.status(200).json(ticketDetails);
   }
   catch(error){
@@ -362,7 +406,27 @@ exports.askForPayment = async (req, res) => {
             `,
       };
 
+      const sendEmailToAdmin = {
+        from: process.env.INFO_EMAIL || "info@gstkanotice.com",
+        to: process.env.INFO_EMAIL || "info@gstkanotice.com",
+        subject: `Payment Request for Ticket No: ${ticketNo}`,
+        html: `<p>Dear <b>Admin</b>,</p>
+
+            <p>Payment Request for Ticket No: ${ticketNo} has been sent to User.</p>
+            
+            <p>Amount: <b>${new Intl.NumberFormat("en-IN", {
+              style: "currency",
+              currency: "INR",
+            }).format(asked_price)} /-
+          </b></p>
+            <p>Due Date: ${date} (3 Days from the Notice updated/ Payment requested dated)</p>          
+            <p>Please ensure that the payment is made by the specified due date. If you encounter any issues during the payment process or if you have any questions regarding the invoice, feel free to reach out to our support team at <b>help@gstkanotice.com</b> or call us at <b>+91 7817010434</b> . We are here to assist you.</p>
+            ${signature}
+            `,
+      };
+
       transporter.sendMail(mailOptions);
+      transporter.sendMail(sendEmailToAdmin);
 
     return res.status(200).json(ticketDetails);
 
@@ -682,7 +746,29 @@ exports.verifyPayment = async (req, res) => {
           `,
       };
 
+      const sendEmailToAdmin = {
+        from: process.env.INFO_EMAIL || "info@gstkanotice.com",
+        to: process.env.INFO_EMAIL || "info@gstkanotice.com",
+        subject: `Payment Successfully Processed for Ticket No: ${ticketDetails.ticketNo}`,
+        html: `<p>Dear <b>Admin</b>,</p>
+          <p>We are pleased to inform you that the payment associated with the ticket number <b>${
+            ticketDetails.ticketNo
+          }</b>, has been successfully processed.</p>
+          
+          <p><b>Payment Status:</b> Paid</p>
+        <p><b> Amount:</b> ${new Intl.NumberFormat("en-IN", {
+          style: "currency",
+          currency: "INR",
+        }).format(ticketDetails.asked_price)} /-</p>
+          <p><b>Transaction ID:</b> ${razorpay_payment_id}</p>
+          <p><b>Date and Time:</b> ${date}</p>          
+          ${signature}
+          `,
+      };
+
+
       transporter.sendMail(paymentMailOptions);
+      transporter.sendMail(sendEmailToAdmin);
 
       const caseNo = await generateUniqueNo("C");
       let data = {
@@ -697,6 +783,7 @@ exports.verifyPayment = async (req, res) => {
       Cases.create(data)
         .then(async (result) => {
           if (result) {
+
             const caseCreatedMailOptions = {
               from: process.env.INFO_EMAIL || "info@gstkanotice.com",
               to: email,
@@ -718,7 +805,30 @@ exports.verifyPayment = async (req, res) => {
             `,
             };
 
+            const sendEmailToAdmin = {
+              from: process.env.INFO_EMAIL || "info@gstkanotice.com",
+              to: process.env.INFO_EMAIL || "info@gstkanotice.com",
+              subject: `Case Created Successfully - Case No: ${result.caseNo} for Ticket No: ${ticketDetails.ticketNo}`,
+              html: `<p>Dear <b>Admin</b>,</p>
+
+            <p>We trust this message finds you well. We would like to inform you that a case has been successfully created in response to your recent payment for the ticket number <b>${ticketDetails.ticketNo}</b>.</p>
+            
+            <p><b>Case Number:</b> ${result.caseNo}</p>
+            
+            <p>Our team is now reviewing the details of your case and will work diligently to provide you with a resolution. You can track the status and progress of your case at any time by logging into your account on our website and navigating to Cases under the Profile section.</p>
+            
+            <p>If you have any further inquiries or if there are specific details you would like to provide regarding your payment, please reply to this email with the case number  ${result.caseNo} in the subject line.</p>
+            
+            <p>We appreciate your cooperation and prompt attention to this matter. If you have additional questions or require assistance, please feel free to reach out to our support team at <b>help@gstkanotice.com</b> or call us at <b>+91 7817010434</b> . We are here to assist you.</p>
+            
+           <p> Thank you for choosing GST KA NOTICE. We value your trust and look forward to assisting you further.</p>
+           ${signature}
+            `,
+            };
+            
+
             transporter.sendMail(caseCreatedMailOptions);
+            transporter.sendMail(sendEmailToAdmin);
 
             return res.status(200).json({
               error: false,
